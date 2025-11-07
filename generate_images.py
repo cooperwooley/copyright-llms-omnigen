@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 import torch
 from torchvision.utils import save_image
+import gc
 
 sys.path.insert(0, str(Path(__file__).parent / "OmniGen2"))
 from omnigen2.pipelines.omnigen2.pipeline_omnigen2 import OmniGen2Pipeline
@@ -27,13 +28,33 @@ pipeline = OmniGen2Pipeline.from_pretrained(
     trust_remote_code=True,
 )
 
+if not hasattr(pipeline.transformer, 'enable_teacache'):
+    pipeline.transformer.enable_teacache = False
+
 # pipeline.transformer = OmniGen2Transformer2DModel.from_pretrained(
 #     model_path,
 #     subfolder="transformer",
 #     torch_dtype=weight_dtype,
 # )
 
+# Enabled for potential 2X speedup
+pipeline.enable_taylorseer = True
+
+from omnigen2.schedulers.scheduling_dpmsolver_multistep import DPMSolverMultistepScheduler
+scheduler = DPMSolverMultistepScheduler(
+    algorithm_type="dpmsolver++",
+    solver_type="midpoint",
+    solver_order=2,
+    prediction_type="flow_prediction",
+)
+pipeline.scheduler = scheduler
+
 pipeline.to(device)
+
+# Free up memory after loading
+if torch.cuda.is_available():
+    torch.cuda.empty_cache()
+gc.collect()
 
 # Load prompts
 prompts = []
@@ -45,15 +66,25 @@ with open(PROMPTS_FILE, "r") as f:
     
 print(f"Loaded {len(prompts)} prompts.")
 
-# Generate
+# Generate images one at a time
 for i, prompt in enumerate(prompts, start=1):
     print(f"[{i}/{len(prompts)}] Generating: {prompt}")
     
-    image = pipeline(prompt)
+    # Generate image
+    image = pipeline(
+        prompt,
+        num_inference_steps=28,
+        cfg_range=(0.0, 0.8),
+        )
 
     # save image
     out_path = OUTPUT_DIR / f"image_{i:03d}.png"
     image.save(out_path)
     print(f"Save to {out_path}")
+
+    # Clean up memory after each gen
+    if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    gc.collect()
 
 print("\nDONE!")
