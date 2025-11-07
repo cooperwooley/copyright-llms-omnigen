@@ -27,11 +27,11 @@ pipeline = OmniGen2Pipeline.from_pretrained(
     trust_remote_code=True,
 )
 
-pipeline.transformer = OmniGen2Transformer2DModel.from_pretrained(
-    model_path,
-    subfolder="transformer",
-    torch_dtype=weight_dtype,
-)
+# pipeline.transformer = OmniGen2Transformer2DModel.from_pretrained(
+#     model_path,
+#     subfolder="transformer",
+#     torch_dtype=weight_dtype,
+# )
 
 pipeline.to(device)
 
