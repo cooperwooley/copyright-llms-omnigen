@@ -71,7 +71,7 @@ for i, prompt in enumerate(prompts, start=1):
     print(f"[{i}/{len(prompts)}] Generating: {prompt}")
     
     # Generate image
-    image = pipeline(
+    result = pipeline(
         prompt,
         num_inference_steps=28,
         cfg_range=(0.0, 0.8),
@@ -79,7 +79,9 @@ for i, prompt in enumerate(prompts, start=1):
 
     # save image
     out_path = OUTPUT_DIR / f"image_{i:03d}.png"
-    image.save(out_path)
+
+    output_image = result.images[0] if isinstance(result.images, list) else result.images
+    output_image.save(out_path)
     print(f"Save to {out_path}")
 
     # Clean up memory after each gen
