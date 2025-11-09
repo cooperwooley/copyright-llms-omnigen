@@ -73,7 +73,7 @@ for i, prompt in enumerate(prompts, start=1):
     # Generate image
     result = pipeline(
         prompt,
-        num_inference_steps=28,
+        num_inference_steps=12,
         cfg_range=(0.0, 0.8),
         )
 
