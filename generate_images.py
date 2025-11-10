@@ -28,6 +28,8 @@ pipeline = OmniGen2Pipeline.from_pretrained(
     trust_remote_code=True,
 )
 
+pipeline.enable_model_cpu_offload()
+
 if not hasattr(pipeline.transformer, 'enable_teacache'):
     pipeline.transformer.enable_teacache = False
 
@@ -73,7 +75,7 @@ for i, prompt in enumerate(prompts, start=1):
     # Generate image
     result = pipeline(
         prompt,
-        num_inference_steps=12,
+        num_inference_steps=28,
         cfg_range=(0.0, 0.8),
         )
 
